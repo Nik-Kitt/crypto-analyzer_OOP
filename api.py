@@ -21,18 +21,27 @@ def retry(max_attempts=3, delay=2):
         return wrapper
     return decorator
 
+
 class API:
 
     def __init__(self, url, api_key=None):
        self.url = url
        self.api_key = api_key
+       self.session = requests.Session()
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.session.close()
+
 
 class CoinGecko(API):
 
     @retry(max_attempts=3, delay=2)
     def get_api_info(self):
         ''' Получаем информацию из API CoinGecko'''
-        response = requests.get(self.url)
+        response = self.session.get(self.url)
         response.raise_for_status()
         data = response.json()
         return data
@@ -41,6 +50,8 @@ class CoinGecko(API):
         ''' Преобразовываем ответ API в единый формат для анализатора'''
         result_data = []
         for coin in data:
+            if coin['price_change_percentage_24h'] is None:
+                continue
             result_dict = {
                 'name': coin['name'],
                 'symbol': coin['symbol'],
@@ -49,18 +60,17 @@ class CoinGecko(API):
                 'volume_24h': coin['total_volume'],
                 'market_cap': coin['market_cap'],
             }
+            
             result_data.append(result_dict)
         return result_data
         
-
-
 
 class CoinMarketCap(API):
     
     @retry(max_attempts=3, delay=2)
     def get_api_info(self):
         ''' Получаем информацию из API CoinMarketCap'''
-        response = requests.get(
+        response = self.session.get(
             self.url,
             headers={
         'X-CMC_PRO_API_KEY': self.api_key

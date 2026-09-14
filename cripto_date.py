@@ -1,3 +1,16 @@
+import operator
+
+
+OPERATORS = {
+    '<': operator.lt,
+    '>': operator.gt,
+    '<=': operator.le,
+    '>=': operator.ge,
+    '==': operator.eq,
+    '!=': operator.ne,
+}
+
+
 class CryptoAsset:
     def  __init__(
         self,
@@ -14,6 +27,54 @@ class CryptoAsset:
         self.volume_24h = volume_24h
         self.market_cap = market_cap
 
+    def __str__(self):
+        return (
+            f'name = {self.name}\n'
+            f'symbol = {self.symbol}\n'
+            f'current_price = {self.current_price}\n'
+            f'price_change_24h = {self.price_change_24h}\n'
+            f'volume_24h = {self.volume_24h}\n'
+            f'market_cap = {self.market_cap}'
+        )
+    
+    def __repr__(self):
+        return (
+            f"CryptoAsset("
+            f"name='{self.name}', "
+            f"symbol='{self.symbol}', "
+            f"current_price={self.current_price}, "
+            f"price_change_24h={self.price_change_24h}, "
+            f"volume_24h={self.volume_24h}, "
+            f"market_cap={self.market_cap})"
+        )
+    
+    def __lt__(self, other):
+        return self.current_price < other.current_price
+    
+    def __gt__(self, other):
+        return self.current_price > other.current_price
+
+    def compare(self, self_two, field_compare, oper):
+        ''' Метод сравнения по произвольнму полю'''
+        oper = str(oper)
+        if oper not in OPERATORS:
+            raise ValueError('Введите корректный оператор сравнения')
+
+        func = OPERATORS[oper]
+        
+        value = getattr(self, field_compare)
+        value_2 = getattr(self_two, field_compare)
+        return func(value, value_2)
+
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'symbol': self.symbol,
+            'current_price': self.current_price,
+            'change_24h': self.price_change_24h,
+            'volume_24h': self.volume_24h,
+            'market_cap': self.market_cap
+        }
 
 class CryptoCollection:
     def __init__(self, assets):
