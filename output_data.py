@@ -27,14 +27,27 @@ class ConsoleReporter(Reporter):
 
 
 class JsonReporter(Reporter):
-    def report(self, data):
-        data['max_volume_coin'] = data['max_volume_coin'].to_dict()
+    def __init__(self, name_file='crypto_report.json'):
+        if isinstance(name_file, str):
+            self.name_file = name_file
+        else:
+            raise TypeError('Название файла должно быть строкой')
 
-        with open('crypto_report.json', 'w') as file:
-            json.dump(data, file, indent=4, ensure_ascii=False)
+    def report(self, data):
+        report_data = data.copy()
+        report_data['max_volume_coin'] = data['max_volume_coin'].to_dict()
+
+        with open(self.name_file, 'w') as file:
+            json.dump(report_data, file, indent=4, ensure_ascii=False)
 
 
 class CsvReporter(Reporter):
+    def __init__(self, name_file='crypto_report.csv'):
+        if isinstance(name_file, str):
+            self.name_file = name_file
+        else:
+            raise TypeError('Название файла должно быть строкой')
+
     def report(self, data):
         fieldnames = [
             'category',
@@ -46,7 +59,7 @@ class CsvReporter(Reporter):
             'market_cap'
         ]
 
-        with open('crypto_report.csv', 'w', newline='') as file:
+        with open(self.name_file, 'w', newline='') as file:
             writer = csv.DictWriter(
                 file,
                 fieldnames=fieldnames
