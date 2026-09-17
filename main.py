@@ -1,6 +1,5 @@
 import os
 import typer
-import pprint
 import requests
 
 from typing import Literal
@@ -55,7 +54,7 @@ def main(
     top_gainers = collection.prepare_top_coins(top_max) # Топ лидеров роста в конечном формате
     top_losers = collection.prepare_top_coins(top_min) # Топ лидеров падения в конечном формате
 
-    max_total_volume = collection.get_top_coins('volume_24h', 1, True)[0] # Монета с максимальным объемом торгов
+    max_total_volume = collection.get_top_coins('volume_24h', 1, True)[0].to_dict() # Монета с максимальным объемом торгов
     total_market_cap_usd = collection.sum_market_cap()
     generated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 

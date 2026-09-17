@@ -34,11 +34,9 @@ class JsonReporter(Reporter):
             raise TypeError('Название файла должно быть строкой')
 
     def report(self, data):
-        report_data = data.copy()
-        report_data['max_volume_coin'] = data['max_volume_coin'].to_dict()
 
         with open(self.name_file, 'w') as file:
-            json.dump(report_data, file, indent=4, ensure_ascii=False)
+            json.dump(data, file, indent=4, ensure_ascii=False)
 
 
 class CsvReporter(Reporter):
@@ -49,15 +47,7 @@ class CsvReporter(Reporter):
             raise TypeError('Название файла должно быть строкой')
 
     def report(self, data):
-        fieldnames = [
-            'category',
-            'name',
-            'symbol',
-            'current_price',
-            'change_24h',
-            'volume_24h',
-            'market_cap'
-        ]
+        fieldnames = ['category', *data['top_gainers'][0].keys()]
 
         with open(self.name_file, 'w', newline='') as file:
             writer = csv.DictWriter(
@@ -68,37 +58,11 @@ class CsvReporter(Reporter):
             writer.writeheader()
 
             for coin in data['top_gainers']:
-                writer.writerow({
-                    'category': 'gainer',
-                    'name': coin['name'],
-                    'symbol': coin['symbol'],
-                    'current_price': '',
-                    'change_24h': coin['change_24h'],
-                    'volume_24h': '',
-                    'market_cap': ''
-                })
+                writer.writerow({'category': 'gainer', **coin})
 
             for coin in data['top_losers']:
-                writer.writerow({
-                    'category': 'loser',
-                    'name': coin['name'],
-                    'symbol': coin['symbol'],
-                    'current_price': '',
-                    'change_24h': coin['change_24h'],
-                    'volume_24h': '',
-                    'market_cap': ''
-                })
+                writer.writerow({'category': 'loser', **coin})
 
             coin = data['max_volume_coin']
 
-            writer.writerow({
-                'category': 'max_volume_coin',
-                'name': coin.name,
-                'symbol': coin.symbol,
-                'current_price': coin.current_price,
-                'change_24h': coin.price_change_24h,
-                'volume_24h': coin.volume_24h,
-                'market_cap': coin.market_cap
-            })
-
-        
+            writer.writerow({'category': 'max_volume_coin', **coin})
