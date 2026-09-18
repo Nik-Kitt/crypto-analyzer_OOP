@@ -47,7 +47,7 @@ class CsvReporter(Reporter):
             raise TypeError('Название файла должно быть строкой')
 
     def report(self, data):
-        fieldnames = ['category', *data['top_gainers'][0].keys()]
+        fieldnames = ['category', *data['max_volume_coin'].keys()]
 
         with open(self.name_file, 'w', newline='') as file:
             writer = csv.DictWriter(
