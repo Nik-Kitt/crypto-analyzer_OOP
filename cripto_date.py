@@ -78,7 +78,12 @@ class CryptoAsset:
 
 class CryptoCollection:
     def __init__(self, assets):
-        self.assets = assets
+        filtered_assets = []
+        for asset in assets:
+            if asset.price_change_24h is not None:
+                filtered_assets.append(asset)
+        self.assets = filtered_assets
+                
 
     def get_top_coins(self, field_name, top_n, reverse=False):
         sorted_data = sorted(
@@ -100,11 +105,7 @@ class CryptoCollection:
     def prepare_top_coins(self, top_coins):
         result_top_coins = []
         for coin in top_coins:
-            new_dict = {}
-            new_dict['name'] = coin.name
-            new_dict['symbol'] = coin.symbol
-            new_dict['change_24h'] = coin.price_change_24h
-            result_top_coins.append(new_dict)
+            result_top_coins.append(coin.to_dict())
         return result_top_coins
 
     

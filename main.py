@@ -1,5 +1,6 @@
 import os
 import typer
+import requests
 
 from typing import Literal
 from dotenv import load_dotenv
@@ -29,9 +30,10 @@ def main(
     print(f'Обработанные данные будут представлены в формате: {output}')
     print(f'Количество монет в топе: {top}')
 
+    session = requests.Session()
     providers = {
-        'coingecko': lambda: CoinGecko(urlCG),
-        'coinmarketcap': lambda: CoinMarketCap(urlCMC, api_key),
+        'coingecko': lambda: CoinGecko(urlCG, session),
+        'coinmarketcap': lambda: CoinMarketCap(urlCMC, session, api_key),
     }
     provider_factory = providers[source]
     provider = provider_factory()
@@ -45,14 +47,14 @@ def main(
     for data in result_data: # Сделали список объектов класса CryptoAsset
         crypto_asset.append(CryptoAsset(**data))
     collection = CryptoCollection(crypto_asset) # Объекты CryptoCollection - списки объектов CryptoAsset
-
+    
     top_max = collection.get_top_coins('price_change_24h', top, True) # Топ роста
     top_min = collection.get_top_coins('price_change_24h', top) # Топ падения
 
     top_gainers = collection.prepare_top_coins(top_max) # Топ лидеров роста в конечном формате
     top_losers = collection.prepare_top_coins(top_min) # Топ лидеров падения в конечном формате
 
-    max_total_volume = collection.get_top_coins('volume_24h', 1, True)[0] # Монета с максимальным объемом торгов
+    max_total_volume = collection.get_top_coins('volume_24h', 1, True)[0].to_dict() # Монета с максимальным объемом торгов
     total_market_cap_usd = collection.sum_market_cap()
     generated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
