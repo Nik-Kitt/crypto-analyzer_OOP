@@ -1,5 +1,6 @@
 import pytest
 import requests
+import os
 
 from unittest.mock import Mock, patch
 from api import API, RetryableError, CoinGecko, retry, CoinMarketCap
@@ -290,3 +291,98 @@ def test_get_correct_data(
     result_data = api_client.get_correct_data(date_for_method)
 
     assert result_data == need_data
+
+
+@pytest.mark.integration
+def test_coingecko_real_api_response():
+    url = (
+        'https://api.coingecko.com/api/v3/coins/markets'
+        '?vs_currency=usd&order=market_cap_desc'
+        '&per_page=5&page=1'
+    )
+
+    with requests.Session() as session:
+        api = CoinGecko(url=url, session=session)
+        data = api.get_api_info()
+
+    assert isinstance(data, list)
+    assert len(data) > 0
+
+    required_fields = {
+        'name',
+        'symbol',
+        'current_price',
+        'price_change_percentage_24h',
+        'total_volume',
+        'market_cap',
+    }
+
+    for coin in data:
+        assert isinstance(coin, dict)
+        assert required_fields.issubset(coin.keys())
+
+    converted_data = api.get_correct_data(data)
+
+    assert len(converted_data) == len(data)
+    assert all(
+        {
+            'name',
+            'symbol',
+            'current_price',
+            'price_change_24h',
+            'volume_24h',
+            'market_cap',
+        }.issubset(coin.keys())
+        for coin in converted_data
+    )
+
+
+@pytest.mark.integration
+def test_coin_market_cap_real_api_response():
+    api_key = os.getenv('CMC_API_KEY')
+    if not api_key:
+        pytest.skip('Не задан CMC_API_KEY')
+
+    url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest'
+
+    with requests.Session() as session:
+        api = CoinMarketCap(
+            url=url,
+            session=session,
+            api_key=api_key,
+        )
+        data = api.get_api_info()
+        converted_data = api.get_correct_data(data)
+
+    assert isinstance(data, dict)
+    assert isinstance(data.get('data'), list)
+    assert len(data['data']) > 0
+
+    required_fields = {
+        'name',
+        'symbol',
+        'quote',
+    }
+
+    for coin in data['data']:
+        assert required_fields.issubset(coin.keys())
+        assert isinstance(coin['quote'], list)
+        assert len(coin['quote']) > 0
+
+        quote = coin['quote'][0]
+        assert {
+            'price',
+            'percent_change_24h',
+            'volume_24h',
+            'market_cap',
+        }.issubset(quote.keys())
+
+    assert len(converted_data) == len(data['data'])
+    assert {
+        'name',
+        'symbol',
+        'current_price',
+        'price_change_24h',
+        'volume_24h',
+        'market_cap',
+    }.issubset(converted_data[0].keys())
