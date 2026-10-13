@@ -4,6 +4,7 @@ import pprint
 
 from abc import ABC, abstractmethod
 
+
 class Reporter(ABC):
     @abstractmethod
     def report(self, data):
@@ -23,7 +24,6 @@ class ConsoleReporter(Reporter):
 
         print('\nОбщая капитализация:')
         pprint.pprint(data['total_market_cap_usd'])
-        
 
 
 class JsonReporter(Reporter):

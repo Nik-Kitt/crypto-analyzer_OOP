@@ -12,14 +12,15 @@ OPERATORS = {
 
 
 class CryptoAsset:
-    def  __init__(
+    def __init__(
         self,
         name,
         symbol,
         current_price,
         price_change_24h,
         volume_24h,
-        market_cap):
+        market_cap
+    ):
         self.name = name
         self.symbol = symbol
         self.current_price = current_price
@@ -36,7 +37,7 @@ class CryptoAsset:
             f'volume_24h = {self.volume_24h}\n'
             f'market_cap = {self.market_cap}'
         )
-    
+
     def __repr__(self):
         return (
             f"CryptoAsset("
@@ -47,10 +48,10 @@ class CryptoAsset:
             f"volume_24h={self.volume_24h}, "
             f"market_cap={self.market_cap})"
         )
-    
+
     def __lt__(self, other):
         return self.current_price < other.current_price
-    
+
     def __gt__(self, other):
         return self.current_price > other.current_price
 
@@ -61,7 +62,7 @@ class CryptoAsset:
             raise ValueError('Введите корректный оператор сравнения')
 
         func = OPERATORS[oper]
-        
+
         value = getattr(self, field_compare)
         value_2 = getattr(self_two, field_compare)
         return func(value, value_2)
@@ -76,6 +77,7 @@ class CryptoAsset:
             'market_cap': self.market_cap
         }
 
+
 class CryptoCollection:
     def __init__(self, assets):
         filtered_assets = []
@@ -83,7 +85,6 @@ class CryptoCollection:
             if asset.price_change_24h is not None:
                 filtered_assets.append(asset)
         self.assets = filtered_assets
-                
 
     def get_top_coins(self, field_name, top_n, reverse=False):
         sorted_data = sorted(
@@ -107,5 +108,3 @@ class CryptoCollection:
         for coin in top_coins:
             result_top_coins.append(coin.to_dict())
         return result_top_coins
-
-    
