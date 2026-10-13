@@ -6,3 +6,5 @@ crypto_report.json
 quote_list.png
 test_simple.py
 README
+.coverage
+htmlcov/
