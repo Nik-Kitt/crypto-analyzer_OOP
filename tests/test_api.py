@@ -41,6 +41,82 @@ def coin_market_cap(session):
         api_key='test_key')
 
 
+@pytest.fixture
+def coingecko_response_data():
+    return [
+        {
+            'name': 'Bitway',
+            'symbol': 'btw',
+            'current_price': 1.49,
+            'price_change_percentage_24h': 9.2876,
+            'total_volume': 9054598,
+            'market_cap': 4041061224,
+        },
+        {
+            'name': 'Quant',
+            'symbol': 'qnt',
+            'current_price': 241.93,
+            'price_change_percentage_24h': 1.81487,
+            'total_volume': 198128517,
+            'market_cap': 3516677535,
+        },
+    ]
+
+
+@pytest.fixture
+def coinmarketcap_response_data():
+    return {
+        'data': [
+            {
+                'name': 'Bitway',
+                'symbol': 'btw',
+                'quote': [
+                    {
+                        'price': 1.49,
+                        'percent_change_24h': 9.2876,
+                        'volume_24h': 9054598,
+                        'market_cap': 4041061224,
+                    }
+                ],
+            },
+            {
+                'name': 'Quant',
+                'symbol': 'qnt',
+                'quote': [
+                    {
+                        'price': 241.93,
+                        'percent_change_24h': 1.81487,
+                        'volume_24h': 198128517,
+                        'market_cap': 3516677535,
+                    }
+                ],
+            },
+        ]
+    }
+
+
+@pytest.fixture
+def expected_crypto_data():
+    return [
+        {
+            'name': 'Bitway',
+            'symbol': 'btw',
+            'current_price': 1.49,
+            'price_change_24h': 9.2876,
+            'volume_24h': 9054598,
+            'market_cap': 4041061224,
+        },
+        {
+            'name': 'Quant',
+            'symbol': 'qnt',
+            'current_price': 241.93,
+            'price_change_24h': 1.81487,
+            'volume_24h': 198128517,
+            'market_cap': 3516677535,
+        },
+    ]
+
+
 def test_api(api, session):
     assert api.url == 'test_url'
     assert api.session is session
@@ -120,52 +196,25 @@ def test_network_error(request, coin_api):
 
 
 @pytest.mark.parametrize(
-    'coin_api, expected_data, expected_headers',
+    'coin_api, data_fixture, expected_headers',
     [
-        (
-            'coin_gecko',
-            [
-                {
-                    'name': 'Bitway',
-                    'symbol': 'btw',
-                    'current_price': 1.49,
-                    'price_change_percentage_24h': 9.2876,
-                    'total_volume': 9054598,
-                    'market_cap': 4041061224
-                }
-            ],
-            None
-        ),
+        ('coin_gecko', 'coingecko_response_data', None),
         (
             'coin_market_cap',
-            {
-                'data': [
-                    {
-                        'name': 'Bitway',
-                        'symbol': 'btw',
-                        'quote': [
-                            {
-                                'price': 1.49,
-                                'percent_change_24h': 9.2876,
-                                'volume_24h': 9054598,
-                                'market_cap': 4041061224
-                            }
-                        ]
-                    }
-                ]
-            },
-            {'X-CMC_PRO_API_KEY': 'test_key'}
-        )
-    ]
+            'coinmarketcap_response_data',
+            {'X-CMC_PRO_API_KEY': 'test_key'},
+        ),
+    ],
 )
 def test_get_api_info(
     request,
     coin_api,
-    expected_data,
+    data_fixture,
     expected_headers,
     session,
-    response
+    response,
 ):
+    expected_data = request.getfixturevalue(data_fixture)
     response.status_code = 200
     response.json.return_value = expected_data
     session.get.return_value = response
@@ -181,116 +230,52 @@ def test_get_api_info(
     else:
         session.get.assert_called_once_with(
             api_client.url,
-            headers=expected_headers
+            headers=expected_headers,
         )
 
     response.raise_for_status.assert_called_once_with()
 
 
+@pytest.mark.parametrize('status_code', [429, 500])
+def test_get_api_info_retry_http_error(
+    coin_gecko,
+    session,
+    response,
+    status_code,
+):
+    response.status_code = status_code
+    session.get.return_value = response
+
+    with patch('api.time.sleep') as mock_sleep:
+        with pytest.raises(
+            RuntimeError,
+            match='Ошибка подключения к API',
+        ):
+            coin_gecko.get_api_info()
+
+    assert session.get.call_count == 3
+    assert mock_sleep.call_count == 2
+
+
 @pytest.mark.parametrize(
-    'coin_api, date_for_method, need_data',
+    'coin_api, data_fixture',
     [
-        (
-            'coin_gecko',
-            [
-                {
-                    'name': 'Bitway',
-                    'symbol': 'btw',
-                    'current_price': 1.49,
-                    'price_change_percentage_24h': 9.2876,
-                    'total_volume': 9054598,
-                    'market_cap': 4041061224
-                },
-                {
-                    'name': 'Quant',
-                    'symbol': 'qnt',
-                    'current_price': 241.93,
-                    'price_change_percentage_24h': 1.81487,
-                    'total_volume': 198128517,
-                    'market_cap': 3516677535
-                }
-            ],
-            [
-                {
-                    'name': 'Bitway',
-                    'symbol': 'btw',
-                    'current_price': 1.49,
-                    'price_change_24h': 9.2876,
-                    'volume_24h': 9054598,
-                    'market_cap': 4041061224
-                },
-                {
-                    'name': 'Quant',
-                    'symbol': 'qnt',
-                    'current_price': 241.93,
-                    'price_change_24h': 1.81487,
-                    'volume_24h': 198128517,
-                    'market_cap': 3516677535
-                }
-            ]
-        ),
-        (
-            'coin_market_cap',
-            {
-                'data': [
-                    {
-                        'name': 'Bitway',
-                        'symbol': 'btw',
-                        'quote': [
-                            {
-                                'price': 1.49,
-                                'percent_change_24h': 9.2876,
-                                'volume_24h': 9054598,
-                                'market_cap': 4041061224
-                            }
-                        ]
-                    },
-                    {
-                        'name': 'Quant',
-                        'symbol': 'qnt',
-                        'quote': [
-                            {
-                                'price': 241.93,
-                                'percent_change_24h': 1.81487,
-                                'volume_24h': 198128517,
-                                'market_cap': 3516677535
-                            }
-                        ]
-                    }
-                ]
-            },
-            [
-                {
-                    'name': 'Bitway',
-                    'symbol': 'btw',
-                    'current_price': 1.49,
-                    'price_change_24h': 9.2876,
-                    'volume_24h': 9054598,
-                    'market_cap': 4041061224
-                },
-                {
-                    'name': 'Quant',
-                    'symbol': 'qnt',
-                    'current_price': 241.93,
-                    'price_change_24h': 1.81487,
-                    'volume_24h': 198128517,
-                    'market_cap': 3516677535
-                }
-            ]
-        )
-    ]
+        ('coin_gecko', 'coingecko_response_data'),
+        ('coin_market_cap', 'coinmarketcap_response_data'),
+    ],
 )
 def test_get_correct_data(
     request,
     coin_api,
-    date_for_method,
-    need_data
+    data_fixture,
+    expected_crypto_data,
 ):
     api_client = request.getfixturevalue(coin_api)
+    source_data = request.getfixturevalue(data_fixture)
 
-    result_data = api_client.get_correct_data(date_for_method)
+    result_data = api_client.get_correct_data(source_data)
 
-    assert result_data == need_data
+    assert result_data == expected_crypto_data
 
 
 @pytest.mark.integration

@@ -40,6 +40,11 @@ def test_get_top_coins(crypto_collection, crypto_asset, crypto_other_asset):
     assert sorted_data == [crypto_asset, crypto_other_asset]
 
 
+def test_get_top_coin_invalid_field(crypto_collection):
+    with pytest.raises(AttributeError):
+        crypto_collection.get_top_coins('unknown_field', 2)
+
+
 def test_sum_market_cap(crypto_collection):
     assert crypto_collection.sum_market_cap() == 7557738759
 

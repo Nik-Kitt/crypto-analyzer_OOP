@@ -35,17 +35,27 @@ def test_crypto_asset_repr(crypto_asset):
 
 def test_crypto_asset_lt(crypto_asset, crypto_other_asset):
     assert crypto_asset < crypto_other_asset
+    assert not crypto_other_asset < crypto_asset
 
 
 def test_crypto_asset_gt(crypto_asset, crypto_other_asset):
     assert crypto_other_asset > crypto_asset
+    assert not crypto_asset > crypto_other_asset
 
 
-def test_compare(crypto_asset, crypto_other_asset):
+@pytest.mark.parametrize('operator, expected', [
+    ('<', False),
+    ('>', True),
+    ('<=', False),
+    ('>=', True),
+    ('==', False),
+    ('!=', True),
+])
+def test_compare(crypto_asset, crypto_other_asset, operator, expected):
     assert crypto_asset.compare(
             crypto_other_asset,
             'market_cap',
-            '!=')
+            operator) is expected
 
 
 def test_compare_fail(crypto_asset, crypto_other_asset):

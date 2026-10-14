@@ -182,3 +182,18 @@ def test_csv_reporter_report(crypto_report_data, tmp_path):
     assert result_data[-1]['market_cap'] == '184101562270'
 
     assert len(result_data) == 7
+
+
+def test_reporters_use_common_interface(crypto_report_data, tmp_path, capsys):
+    reporters = [
+        ConsoleReporter(),
+        JsonReporter(name_file=str(tmp_path / 'report.json')),
+        CsvReporter(name_file=str(tmp_path / 'report.csv')),
+    ]
+
+    for reporter in reporters:
+        reporter.report(crypto_report_data)
+
+    assert (tmp_path / 'report.json').exists()
+    assert (tmp_path / 'report.csv').exists()
+    assert 'Топ лидеров роста:' in capsys.readouterr().out
