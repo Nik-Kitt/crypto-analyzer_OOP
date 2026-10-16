@@ -2,7 +2,7 @@ import pytest
 import json
 import csv
 
-from output_data import ConsoleReporter, JsonReporter, CsvReporter
+from output_data import ConsoleReporter, JsonReporter, CsvReporter, Reporter
 
 
 @pytest.fixture
@@ -130,6 +130,11 @@ def test_console_reporter(crypto_report_data, capsys):
 
     captured = capsys.readouterr()
     assert captured.out == need_data
+
+
+def test_new_reporter():
+    with pytest.raises(TypeError):
+        Reporter()  # type: ignore[abstract]
 
 
 def test_json_reporter_init():

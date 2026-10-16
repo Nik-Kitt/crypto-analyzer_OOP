@@ -29,8 +29,7 @@ def response():
 def coin_gecko(session):
     return CoinGecko(
         url='test_url',
-        session=session,
-        api_key='test_key')
+        session=session)
 
 
 @pytest.fixture
@@ -236,13 +235,20 @@ def test_get_api_info(
     response.raise_for_status.assert_called_once_with()
 
 
-@pytest.mark.parametrize('status_code', [429, 500])
+@pytest.mark.parametrize('coin_api, status_code', [
+    ('coin_gecko', 429),
+    ('coin_gecko', 500),
+    ('coin_market_cap', 429),
+    ('coin_market_cap', 500)
+    ])
 def test_get_api_info_retry_http_error(
-    coin_gecko,
+    request,
     session,
     response,
+    coin_api,
     status_code,
 ):
+    api = request.getfixturevalue(coin_api)
     response.status_code = status_code
     session.get.return_value = response
 
@@ -251,7 +257,7 @@ def test_get_api_info_retry_http_error(
             RuntimeError,
             match='Ошибка подключения к API',
         ):
-            coin_gecko.get_api_info()
+            api.get_api_info()
 
     assert session.get.call_count == 3
     assert mock_sleep.call_count == 2

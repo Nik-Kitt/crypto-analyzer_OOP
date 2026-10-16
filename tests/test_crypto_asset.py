@@ -43,6 +43,14 @@ def test_crypto_asset_gt(crypto_asset, crypto_other_asset):
     assert not crypto_asset > crypto_other_asset
 
 
+def test_comparison_equal_prices(crypto_asset, crypto_other_asset):
+    crypto_asset.current_price = 100
+    crypto_other_asset.current_price = 100
+
+    assert not crypto_asset < crypto_other_asset
+    assert not crypto_asset > crypto_other_asset
+
+
 @pytest.mark.parametrize('operator, expected', [
     ('<', False),
     ('>', True),
