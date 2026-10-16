@@ -20,6 +20,7 @@ urlCMC = (
     '/v3/cryptocurrency/listings/latest'
 )
 
+
 @app.command()
 def main(
     source: Literal['coingecko', 'coinmarketcap'] = typer.Option(...),
@@ -39,27 +40,27 @@ def main(
     provider = provider_factory()
 
     with provider as api:
-        data = api.get_api_info() # Получили данные от API
+        data = api.get_api_info()  # Получили данные от API
 
-    result_data = provider.get_correct_data(data) # Преобразовали ответ для анализатора
-     
+    result_data = provider.get_correct_data(data)  # Преобразовали ответ для анализатора
+
     crypto_asset = []
-    for data in result_data: # Сделали список объектов класса CryptoAsset
+    for data in result_data:  # Сделали список объектов класса CryptoAsset
         crypto_asset.append(CryptoAsset(**data))
-    collection = CryptoCollection(crypto_asset) # Объекты CryptoCollection - списки объектов CryptoAsset
-    
-    top_max = collection.get_top_coins('price_change_24h', top, True) # Топ роста
-    top_min = collection.get_top_coins('price_change_24h', top) # Топ падения
+    collection = CryptoCollection(crypto_asset)  # Объекты CryptoCollection - списки объектов CryptoAsset
 
-    top_gainers = collection.prepare_top_coins(top_max) # Топ лидеров роста в конечном формате
-    top_losers = collection.prepare_top_coins(top_min) # Топ лидеров падения в конечном формате
+    top_max = collection.get_top_coins('price_change_24h', top, True)  # Топ роста
+    top_min = collection.get_top_coins('price_change_24h', top)  # Топ падения
 
-    max_total_volume = collection.get_top_coins('volume_24h', 1, True)[0].to_dict() # Монета с максимальным объемом торгов
+    top_gainers = collection.prepare_top_coins(top_max)  # Топ лидеров роста в конечном формате
+    top_losers = collection.prepare_top_coins(top_min)  # Топ лидеров падения в конечном формате
+
+    # Монета с максимальным объемом торгов
+    max_total_volume = collection.get_top_coins('volume_24h', 1, True)[0].to_dict()
     total_market_cap_usd = collection.sum_market_cap()
     generated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-
-    report_data = { # Создаем словарь выходных данных
+    report_data = {  # Создаем словарь выходных данных
         'generated_at': generated_at,
         'total_coins_analyzed': len(collection.assets),
         'top_gainers': top_gainers,
@@ -80,4 +81,3 @@ def main(
 
 if __name__ == '__main__':
     app()
-
