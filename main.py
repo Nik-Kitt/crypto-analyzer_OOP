@@ -8,7 +8,9 @@ from datetime import datetime
 
 from api import CoinGecko, CoinMarketCap
 from cripto_date import CryptoAsset, CryptoCollection
-from output_data import ConsoleReporter, JsonReporter, CsvReporter
+from output_data import ConsoleReporter, CsvReporter
+from storage import SqliteStorage
+from storage_factory import create_storage
 
 load_dotenv()
 api_key = os.getenv('CMC_API_KEY')
@@ -24,7 +26,7 @@ urlCMC = (
 @app.command()
 def main(
     source: Literal['coingecko', 'coinmarketcap'] = typer.Option(...),
-    output: Literal['console', 'json', 'csv'] = typer.Option(...),
+    output: Literal['console', 'csv'] = typer.Option(...),
     top: int = typer.Option(3)
 ):
     print(f'Вы выбрали для анализа источник: {source}')
@@ -69,14 +71,55 @@ def main(
         'total_market_cap_usd': total_market_cap_usd,
     }
 
+    storage = create_storage()
+    storage.save(report_data)
+
     reporters = {
         'console': ConsoleReporter,
-        'json': JsonReporter,
         'csv': CsvReporter,
     }
 
     reporter = reporters[output]()
     reporter.report(report_data)
+
+
+@app.command()
+def list_snapshots():
+    storage = create_storage()
+
+    if not isinstance(storage, SqliteStorage):
+        raise typer.BadParameter(
+            'Команда доступна только при STORAGE=sqlite'
+        )
+
+    snapshots = storage.get_snapshots()
+    if snapshots:
+        for snapshot in snapshots:
+            print(f"ID: {snapshot['id']} | Дата: {snapshot['generated_at']}")
+    else:
+        print('Сохраненных снимков пока нет')
+
+
+@app.command()
+def compare_snapshots(snapshot_id_1: int, snapshot_id_2: int):
+    storage = create_storage()
+
+    if not isinstance(storage, SqliteStorage):
+        raise typer.BadParameter(
+            'Команда доступна только при STORAGE=sqlite'
+        )
+
+    compares = storage.compare_snapshots(snapshot_id_1, snapshot_id_2)
+    if compares:
+        for compare in compares:
+            print(
+                f"Имя монеты: {compare['name']} | "
+                f"Старая цена: {compare['old_price']} | "
+                f"Новая цена: {compare['new_price']} | "
+                f"Изменение цены: {compare['price_difference']}"
+            )
+    else:
+        print('Нет данных для сравнения этих снимков')
 
 
 if __name__ == '__main__':

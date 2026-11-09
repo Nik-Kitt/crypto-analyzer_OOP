@@ -8,3 +8,4 @@ test_simple.py
 README
 .coverage
 htmlcov/
+crypto.db
