@@ -83,12 +83,17 @@ def mock_api_response(crypto_data):
 
 @pytest.fixture
 def report_data(mock_api_response):
-    with patch('main.ConsoleReporter') as mock_console_reporter:
+    with (
+        patch('main.ConsoleReporter') as mock_console_reporter,
+        patch('main.create_storage') as mock_create_storage,
+    ):
         main.main(
             source='coingecko',
             output='console',
             top=3,
         )
+
+        mock_create_storage.return_value.save.assert_called_once()
 
         report = mock_console_reporter.return_value.report
         report.assert_called_once()
@@ -144,7 +149,6 @@ def test_main_calls_api(mock_api_response, report_data):
 @pytest.mark.parametrize(
     ('output', 'expected_reporter'),
     [('console', 'ConsoleReporter'),
-        ('json', 'JsonReporter'),
         ('csv', 'CsvReporter'),])
 def test_main_selects_reporter(
     output,
@@ -153,8 +157,8 @@ def test_main_selects_reporter(
 ):
     with (
         patch('main.ConsoleReporter') as mock_console,
-        patch('main.JsonReporter') as mock_json,
         patch('main.CsvReporter') as mock_csv,
+        patch('main.create_storage') as mock_create_storage,
     ):
         main.main(
             source='coingecko',
@@ -164,7 +168,6 @@ def test_main_selects_reporter(
 
         reporters = {
             'ConsoleReporter': mock_console,
-            'JsonReporter': mock_json,
             'CsvReporter': mock_csv,
         }
 
@@ -175,3 +178,16 @@ def test_main_selects_reporter(
         for name, reporter in reporters.items():
             if name != expected_reporter:
                 reporter.assert_not_called()
+
+
+def test_json_storage(report_data):
+    with patch('main.create_storage') as mock_create_storage:
+        main.main(
+            source='coingecko',
+            output='console',
+            top=3,
+        )
+
+        mock_create_storage.return_value.save.assert_called_once_with(
+            report_data
+        )
